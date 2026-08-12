@@ -1,0 +1,63 @@
+/* EX™ Dossier Integration V3
+   Isolated styles for runtime-injected services, consultations, tracking,
+   lookup and portal timeline. No existing site selector is redefined. */
+
+.exv3-shell{width:min(1240px,90vw);margin:auto}
+.exv3-section{padding:96px 0;background:#f7f5f2;color:#151518;border-top:1px solid rgba(21,21,24,.08)}
+.exv3-section.exv3-dark{background:#0b0b0e;color:#fff}
+.exv3-kicker{font:700 .68rem/1.4 Inter,sans-serif;letter-spacing:.16em;text-transform:uppercase;color:#bd6f7c}
+.exv3-title{font-family:"Playfair Display",serif;font-weight:400;font-size:clamp(2.6rem,5vw,5rem);line-height:1.02;margin:16px 0}
+html[lang="ar"] .exv3-title{font-family:"Noto Kufi Arabic",sans-serif;line-height:1.35}
+.exv3-lead{max-width:760px;color:#76767d;line-height:1.95;font-size:1rem}
+.exv3-dark .exv3-lead{color:#aaaab2}
+.exv3-services{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-top:34px}
+.exv3-service{min-height:190px;padding:22px;border:1px solid rgba(21,21,24,.1);background:rgba(255,255,255,.72);display:flex;flex-direction:column;justify-content:space-between;transition:.35s cubic-bezier(.16,1,.3,1)}
+.exv3-service:hover{transform:translateY(-5px);background:#fff;box-shadow:0 20px 50px rgba(25,15,20,.08)}
+.exv3-service b{font:400 2.4rem/1 "Playfair Display",serif;color:#bd6f7c}
+.exv3-service h3{margin:12px 0 8px;font-size:1rem}
+.exv3-service p{margin:0;color:#76767d;font-size:.78rem;line-height:1.75}
+.exv3-consult-grid{display:grid;grid-template-columns:.75fr 1.25fr;gap:36px;align-items:start}
+.exv3-card{border:1px solid rgba(255,255,255,.13);border-radius:28px;padding:28px;background:rgba(255,255,255,.035)}
+.exv3-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.exv3-form-grid .full{grid-column:1/-1}
+.exv3-input,.exv3-select,.exv3-textarea{width:100%;border:1px solid rgba(255,255,255,.15);border-radius:14px;background:rgba(0,0,0,.25);color:#fff;padding:15px;outline:none}
+.exv3-input:focus,.exv3-select:focus,.exv3-textarea:focus{border-color:#d98996;box-shadow:0 0 0 4px rgba(217,137,150,.12)}
+.exv3-select option{color:#111}
+.exv3-textarea{min-height:140px;resize:vertical}
+.exv3-files{display:grid;grid-template-columns:repeat(2,1fr);gap:8px}
+.exv3-file{border:1px dashed rgba(255,255,255,.23);border-radius:14px;padding:13px;font-size:.72rem;color:#bdbdc5}
+.exv3-file input{display:block;width:100%;margin-top:8px;font-size:.7rem}
+.exv3-btn{border:0;border-radius:999px;padding:15px 22px;background:#d98996;color:#111;font-weight:800;cursor:pointer;transition:.3s}
+.exv3-btn:hover{transform:translateY(-2px);background:#efbdc6}
+.exv3-btn:disabled{opacity:.55;cursor:not-allowed;transform:none}
+.exv3-status{min-height:22px;margin-top:10px;font-size:.78rem;color:#bbb}
+.exv3-status.ok{color:#77d799}.exv3-status.err{color:#ff9292}
+.exv3-reference{font-family:Inter,monospace;letter-spacing:.08em;font-weight:800}
+.exv3-lookup{margin-top:18px;padding-top:18px;border-top:1px solid rgba(255,255,255,.12)}
+.exv3-lookup-row{display:grid;grid-template-columns:1fr 1.2fr auto;gap:8px}
+.exv3-lookup-row input{min-width:0}
+.exv3-record{border:1px solid rgba(255,255,255,.12);border-radius:18px;padding:18px;background:rgba(255,255,255,.03)}
+.exv3-record+.exv3-record{margin-top:10px}
+.exv3-record-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.exv3-record h3{margin:0;font-size:.95rem}
+.exv3-record p{margin:7px 0 0;color:#a8a8b0;font-size:.74rem;line-height:1.7}
+.exv3-chip{border:1px solid rgba(217,137,150,.5);color:#f2bec7;border-radius:999px;padding:6px 9px;font:700 .59rem/1 Inter,sans-serif;white-space:nowrap}
+.exv3-timeline{margin-top:12px;border-top:1px solid rgba(255,255,255,.1);padding-top:10px;display:grid;gap:8px}
+.exv3-timeline-item{padding-inline-start:14px;border-inline-start:2px solid rgba(217,137,150,.55)}
+.exv3-timeline-item b{display:block;font-size:.72rem}.exv3-timeline-item span{font-size:.68rem;color:#999}
+.exv3-linkbtn{border:0;background:none;color:#d98996;padding:8px 0;cursor:pointer;font-size:.72rem;font-weight:700}
+.exv3-visit-badge{display:inline-flex;gap:8px;align-items:center;margin-top:18px;padding:7px 11px;border:1px solid rgba(21,21,24,.12);border-radius:999px;color:#76767d;font:600 .65rem/1.2 Inter,sans-serif}
+.exv3-visit-badge i{width:6px;height:6px;border-radius:50%;background:#137333}
+.exv3-assistant-note{font-size:.65rem;color:#92929a;line-height:1.55;margin-top:6px}
+.exv3-hidden{display:none!important}
+
+@media(max-width:980px){
+  .exv3-services{grid-template-columns:repeat(2,1fr)}
+  .exv3-consult-grid{grid-template-columns:1fr}
+}
+@media(max-width:620px){
+  .exv3-section{padding:72px 0}
+  .exv3-services,.exv3-form-grid,.exv3-files{grid-template-columns:1fr}
+  .exv3-form-grid .full{grid-column:auto}
+  .exv3-lookup-row{grid-template-columns:1fr}
+}

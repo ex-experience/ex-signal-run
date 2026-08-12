@@ -1,0 +1,377 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /*
+      EX™ Firestore policy — V4 / backward-compatible migration
+      Keeps the existing V3 collections and admin identity, while adding:
+      CreativeIntakes, EarlyAccess, ClientProjects, timelines, SiteEvents,
+      OracleLogs and Public_Services.
+
+      Admin Firebase Authentication email:
+      hussambinhassan92@gmail.com
+    */
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isGateAdmin() {
+      return signedIn()
+        && request.auth.token.email == 'hussambinhassan92@gmail.com';
+    }
+
+    function shortText(v, min, max) {
+      return v is string && v.size() >= min && v.size() <= max;
+    }
+
+    function email(v) {
+      return shortText(v, 5, 254) && v.matches('^[^@]+@[^@]+\\.[^@]+$');
+    }
+
+    function phone(v, required) {
+      return v is string && v.size() <= 32 && (!required || v.size() >= 6);
+    }
+
+    function ownerCreate() {
+      return signedIn()
+        && request.resource.data.OwnerUid is string
+        && request.resource.data.OwnerUid == request.auth.uid;
+    }
+
+    function ownsResource() {
+      return signedIn()
+        && resource.data.OwnerUid is string
+        && resource.data.OwnerUid == request.auth.uid;
+    }
+
+    function keepsOwner() {
+      return signedIn()
+        && resource.data.OwnerUid is string
+        && request.resource.data.OwnerUid == resource.data.OwnerUid
+        && request.resource.data.OwnerUid == request.auth.uid;
+    }
+
+    function serverCreatedAt(field) {
+      return field == request.time;
+    }
+
+    /* -------- Existing private access gate (unchanged contract) -------- */
+    function validGateRegistration() {
+      return request.resource.data.keys().hasAll(
+          ['Name','Email','Phone','Language','Source','Status','Site','CreatedAt','UpdatedAt'])
+        && request.resource.data.keys().hasOnly(
+          ['Name','Email','Phone','Language','Source','Status','Site','CreatedAt','UpdatedAt'])
+        && shortText(request.resource.data.Name,2,100)
+        && email(request.resource.data.Email)
+        && phone(request.resource.data.Phone,true)
+        && request.resource.data.Language in ['ar','en']
+        && request.resource.data.Source == 'private-access-gate'
+        && request.resource.data.Status == 'New'
+        && shortText(request.resource.data.Site,1,120)
+        && serverCreatedAt(request.resource.data.CreatedAt)
+        && request.resource.data.UpdatedAt == request.time;
+    }
+
+    match /Gate_Registrations/{id} {
+      allow create: if validGateRegistration();
+      allow read, update, delete: if isGateAdmin();
+    }
+
+    function validLegacyVipRequest() {
+      return request.resource.data.keys().hasAll(['Name','Email','Phone','Status','Timestamp'])
+        && request.resource.data.keys().hasOnly(['Name','Email','Phone','Language','Source','Status','Timestamp'])
+        && shortText(request.resource.data.Name,2,100)
+        && email(request.resource.data.Email)
+        && phone(request.resource.data.Phone,true)
+        && request.resource.data.Status in ['Pending Audit','Pending','New']
+        && request.resource.data.Timestamp == request.time
+        && (!request.resource.data.keys().hasAll(['Language']) || request.resource.data.Language in ['ar','en']);
+    }
+
+    match /VIP_Early_Access/{id} {
+      allow create: if validLegacyVipRequest();
+      allow read, update, delete: if isGateAdmin();
+    }
+
+    /* -------- User profiles: supports V3 and current dossier shape -------- */
+    function validUserProfile() {
+      return request.resource.data.keys().hasAll(['Name','Email','OwnerUid','AuthProvider'])
+        && request.resource.data.keys().hasOnly(
+          ['Name','Email','Phone','OwnerUid','AuthProvider','Timestamp','UpdatedAt'])
+        && shortText(request.resource.data.Name,0,100)
+        && shortText(request.resource.data.Email,0,254)
+        && (!request.resource.data.keys().hasAll(['Phone']) || phone(request.resource.data.Phone,false))
+        && request.resource.data.OwnerUid == request.auth.uid
+        && request.resource.data.AuthProvider in ['anonymous','google','apple','direct'];
+    }
+
+    match /Users/{uid} {
+      allow create: if signedIn() && uid == request.auth.uid && ownerCreate() && validUserProfile();
+      allow read: if isGateAdmin() || (signedIn() && uid == request.auth.uid);
+      allow update: if isGateAdmin() || (signedIn() && uid == request.auth.uid && keepsOwner() && validUserProfile());
+      allow delete: if isGateAdmin();
+    }
+
+    /* -------- Consultations: legacy + V4 tracked business consultation -------- */
+    function validLegacyConsultation() {
+      return request.resource.data.keys().hasAll(['Name','Email','Phone','Message','Status','Timestamp','OwnerUid'])
+        && request.resource.data.keys().hasOnly(['Name','Email','Phone','Message','Status','Timestamp','OwnerUid'])
+        && shortText(request.resource.data.Name,1,100)
+        && shortText(request.resource.data.Email,1,254)
+        && phone(request.resource.data.Phone,false)
+        && shortText(request.resource.data.Message,1,6000)
+        && request.resource.data.Status == 'Pending'
+        && request.resource.data.Timestamp == request.time;
+    }
+
+    function validV4Consultation() {
+      return request.resource.data.keys().hasAll(
+          ['Name','Email','Service','Message','Consent','OwnerUid','ReferenceCode','Status','Stage','Source','Language','CreatedAt','UpdatedAt'])
+        && request.resource.data.keys().hasOnly(
+          ['Name','Company','Email','Phone','Service','Message','Consent','ReferenceFiles','OwnerUid','ReferenceCode',
+           'Status','Stage','NextAction','Source','Language','ConsentVersion','CreatedAt','UpdatedAt'])
+        && shortText(request.resource.data.Name,1,100)
+        && email(request.resource.data.Email)
+        && shortText(request.resource.data.Service,1,60)
+        && shortText(request.resource.data.Message,1,4000)
+        && request.resource.data.Consent == true
+        && shortText(request.resource.data.ReferenceCode,8,80)
+        && request.resource.data.Status == 'Received'
+        && request.resource.data.Stage == 'Intake'
+        && request.resource.data.Language in ['ar','en']
+        && request.resource.data.CreatedAt == request.time
+        && request.resource.data.UpdatedAt == request.time;
+    }
+
+    match /Consultations/{id} {
+      allow create: if ownerCreate() && (validLegacyConsultation() || validV4Consultation());
+      allow read: if isGateAdmin() || ownsResource();
+      allow update, delete: if isGateAdmin();
+
+      match /Timeline/{eventId} {
+        allow read: if isGateAdmin()
+          || (signedIn() &&
+              get(/databases/$(database)/documents/Consultations/$(id)).data.OwnerUid == request.auth.uid);
+        allow create, update, delete: if isGateAdmin();
+      }
+    }
+
+    /* -------- Creative project intake -------- */
+    function validCreativeIntake() {
+      return request.resource.data.keys().hasAll(
+          ['Name','Company','Email','Phone','Sector','Budget','Capabilities','Goal','PrivacyConsent','DirectionConsent',
+           'ReferenceFiles','ReferenceCode','OwnerUid','Status','Stage','Source','Language','CreatedAt','UpdatedAt'])
+        && request.resource.data.keys().hasOnly(
+          ['Name','Company','Email','Phone','Sector','Budget','Capabilities','Goal','PrivacyConsent','DirectionConsent',
+           'ReferenceFiles','ReferenceCode','OwnerUid','Status','Stage','NextAction','Source','Language','ConsentVersion','CreatedAt','UpdatedAt'])
+        && shortText(request.resource.data.Name,1,100)
+        && shortText(request.resource.data.Company,1,120)
+        && email(request.resource.data.Email)
+        && phone(request.resource.data.Phone,true)
+        && shortText(request.resource.data.Sector,1,80)
+        && shortText(request.resource.data.Budget,1,80)
+        && request.resource.data.Capabilities is list
+        && request.resource.data.Capabilities.size() >= 1
+        && request.resource.data.Capabilities.size() <= 12
+        && shortText(request.resource.data.Goal,1,1800)
+        && request.resource.data.PrivacyConsent == true
+        && request.resource.data.DirectionConsent == true
+        && request.resource.data.ReferenceFiles is list
+        && request.resource.data.ReferenceFiles.size() <= 6
+        && shortText(request.resource.data.ReferenceCode,8,80)
+        && request.resource.data.Status == 'Received'
+        && request.resource.data.Stage == 'Intake'
+        && request.resource.data.Language in ['ar','en']
+        && request.resource.data.CreatedAt == request.time
+        && request.resource.data.UpdatedAt == request.time;
+    }
+
+    match /CreativeIntakes/{id} {
+      allow create: if ownerCreate() && validCreativeIntake();
+      allow read: if isGateAdmin() || ownsResource();
+      allow update, delete: if isGateAdmin();
+
+      match /Timeline/{eventId} {
+        allow read: if isGateAdmin()
+          || (signedIn() &&
+              get(/databases/$(database)/documents/CreativeIntakes/$(id)).data.OwnerUid == request.auth.uid);
+        allow create, update, delete: if isGateAdmin();
+      }
+    }
+
+    /* -------- New Early Access / Private Circle -------- */
+    function validEarlyAccess() {
+      return request.resource.data.keys().hasAll(
+          ['Name','Phone','Email','Interest','Consent','ReferenceCode','OwnerUid','Status','Stage','Source','Language','CreatedAt','UpdatedAt'])
+        && request.resource.data.keys().hasOnly(
+          ['Name','Phone','Email','Interest','Consent','ReferenceCode','OwnerUid','Status','Stage','NextAction','Source','Language','ConsentVersion','CreatedAt','UpdatedAt'])
+        && shortText(request.resource.data.Name,2,100)
+        && phone(request.resource.data.Phone,true)
+        && email(request.resource.data.Email)
+        && shortText(request.resource.data.Interest,1,80)
+        && request.resource.data.Consent == true
+        && shortText(request.resource.data.ReferenceCode,8,80)
+        && request.resource.data.Status == 'Received'
+        && request.resource.data.Language in ['ar','en']
+        && request.resource.data.CreatedAt == request.time
+        && request.resource.data.UpdatedAt == request.time;
+    }
+
+    match /EarlyAccess/{id} {
+      allow create: if ownerCreate() && validEarlyAccess();
+      allow read: if isGateAdmin() || ownsResource();
+      allow update, delete: if isGateAdmin();
+
+      match /Timeline/{eventId} {
+        allow read: if isGateAdmin()
+          || (signedIn() &&
+              get(/databases/$(database)/documents/EarlyAccess/$(id)).data.OwnerUid == request.auth.uid);
+        allow create, update, delete: if isGateAdmin();
+      }
+    }
+
+    /* -------- Client projects are created/updated by staff only -------- */
+    match /ClientProjects/{id} {
+      allow read: if isGateAdmin() || ownsResource();
+      allow create, update, delete: if isGateAdmin();
+
+      match /Timeline/{eventId} {
+        allow read: if isGateAdmin()
+          || (signedIn() &&
+              get(/databases/$(database)/documents/ClientProjects/$(id)).data.OwnerUid == request.auth.uid);
+        allow create, update, delete: if isGateAdmin();
+      }
+    }
+
+    /* -------- Existing matrices/logs/community/rating contracts -------- */
+    function validMatrixLog() {
+      return request.resource.data.keys().hasAll(['Name','Email','Type','Input','Output','Timestamp','OwnerUid'])
+        && request.resource.data.keys().hasOnly(['Name','Email','Type','Input','Output','Timestamp','OwnerUid'])
+        && shortText(request.resource.data.Name,1,100)
+        && shortText(request.resource.data.Email,1,254)
+        && shortText(request.resource.data.Type,1,60)
+        && shortText(request.resource.data.Input,1,6000)
+        && shortText(request.resource.data.Output,1,12000)
+        && request.resource.data.Timestamp == request.time;
+    }
+
+    match /MatrixLogs/{id} {
+      allow create: if ownerCreate() && validMatrixLog();
+      allow read: if isGateAdmin() || ownsResource();
+      allow update, delete: if isGateAdmin();
+    }
+
+    match /OracleLogs/{id} {
+      allow create: if ownerCreate()
+        && request.resource.data.keys().hasAll(['OwnerUid','Message','Language','CreatedAt'])
+        && request.resource.data.keys().hasOnly(['OwnerUid','Message','Language','CreatedAt'])
+        && shortText(request.resource.data.Message,1,1000)
+        && request.resource.data.Language in ['ar','en']
+        && request.resource.data.CreatedAt == request.time;
+      allow read: if isGateAdmin() || ownsResource();
+      allow update, delete: if isGateAdmin();
+    }
+
+    match /SiteEvents/{id} {
+      allow create: if ownerCreate()
+        && request.resource.data.keys().hasAll(['Event','Detail','OwnerUid','Path','Language','CreatedAt'])
+        && request.resource.data.keys().hasOnly(['Event','Detail','OwnerUid','Path','Language','CreatedAt'])
+        && shortText(request.resource.data.Event,1,80)
+        && shortText(request.resource.data.Path,1,220)
+        && request.resource.data.Language in ['ar','en']
+        && request.resource.data.CreatedAt == request.time;
+      allow read, update, delete: if isGateAdmin();
+    }
+
+    function validSecurityLog() {
+      return request.resource.data.keys().hasAll(['action','userName','userEmail','pageVisited','timeOfVisit','userAgent','screenResolution','timestamp','OwnerUid'])
+        && request.resource.data.keys().hasOnly(['action','userName','userEmail','pageVisited','timeOfVisit','userAgent','screenResolution','timestamp','OwnerUid'])
+        && shortText(request.resource.data.action,1,160)
+        && shortText(request.resource.data.userName,1,100)
+        && shortText(request.resource.data.userEmail,1,254)
+        && shortText(request.resource.data.pageVisited,1,180)
+        && shortText(request.resource.data.timeOfVisit,1,160)
+        && shortText(request.resource.data.userAgent,1,1000)
+        && shortText(request.resource.data.screenResolution,1,64)
+        && request.resource.data.timestamp == request.time;
+    }
+
+    match /SecurityLogs/{id} {
+      allow create: if ownerCreate() && validSecurityLog();
+      allow read, update, delete: if isGateAdmin();
+    }
+
+    function validCommunityMember() {
+      return request.resource.data.keys().hasAll(['Name','Email','Timestamp','Source','OwnerUid'])
+        && request.resource.data.keys().hasOnly(['Name','Email','Timestamp','Source','OwnerUid'])
+        && shortText(request.resource.data.Name,2,100)
+        && email(request.resource.data.Email)
+        && shortText(request.resource.data.Source,1,120)
+        && request.resource.data.Timestamp == request.time;
+    }
+
+    match /Community_Family/{id} {
+      allow create: if ownerCreate() && validCommunityMember();
+      allow read: if isGateAdmin() || ownsResource();
+      allow update, delete: if isGateAdmin();
+    }
+
+    function validExperienceRating() {
+      return request.resource.data.keys().hasAll(['Name','Email','Rating','Timestamp','Source','OwnerUid'])
+        && request.resource.data.keys().hasOnly(['Name','Email','Rating','Timestamp','Source','OwnerUid'])
+        && shortText(request.resource.data.Name,2,100)
+        && email(request.resource.data.Email)
+        && request.resource.data.Rating in ['3','4','5']
+        && shortText(request.resource.data.Source,1,120)
+        && request.resource.data.Timestamp == request.time;
+    }
+
+    match /Experience_Ratings/{id} {
+      allow create: if ownerCreate() && validExperienceRating();
+      allow read: if isGateAdmin() || ownsResource();
+      allow update, delete: if isGateAdmin();
+    }
+
+    /* -------- Service catalogue: intentionally public, non-sensitive -------- */
+    match /Public_Services/{id} {
+      allow read: if true;
+      allow create, update, delete: if isGateAdmin();
+    }
+
+    /* -------- Metrics remain private to clients; public count via Cloud Function -------- */
+    function validCounterShape() {
+      return request.resource.data.keys().hasAll(['count','lastUpdated'])
+        && request.resource.data.keys().hasOnly(['count','lastUpdated'])
+        && request.resource.data.count is int
+        && request.resource.data.lastUpdated == request.time;
+    }
+
+    match /visitors/total {
+      allow create: if signedIn() && validCounterShape() && request.resource.data.count == 1;
+      allow update: if isGateAdmin() || (signedIn()
+        && validCounterShape()
+        && resource.data.count is int
+        && request.resource.data.count == resource.data.count + 1);
+      allow read: if isGateAdmin();
+      allow delete: if isGateAdmin();
+    }
+
+    match /VisitorSessions/{id} {
+      allow read, write: if false; // server/Admin SDK only
+    }
+
+    match /LookupRateLimits/{id} {
+      allow read, write: if false; // reserved for server-side throttling
+    }
+
+    match /UsageLimits/{id} {
+      allow read, write: if false; // Cloud Functions/Admin SDK only
+    }
+
+    /* Explicit default-deny for all unlisted future collections. */
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

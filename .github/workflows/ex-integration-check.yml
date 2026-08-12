@@ -1,0 +1,38 @@
+name: EX Integration Guard
+on:
+  pull_request:
+    paths:
+      - "dossier/**"
+      - "functions/**"
+      - "firestore.rules"
+      - "storage.rules"
+      - "EX_DOSSIER_CONNECT_V3.mjs"
+  push:
+    branches: [main]
+    paths:
+      - "dossier/**"
+      - "functions/**"
+      - "firestore.rules"
+      - "storage.rules"
+      - "EX_DOSSIER_CONNECT_V3.mjs"
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Verify EX integration files
+        run: node EX_DOSSIER_CONNECT_V3.mjs --verify
+      - name: Ensure exposed legacy token is not in public dossier
+        shell: bash
+        run: |
+          if grep -R --line-number --fixed-string "EX_SHIELD_99X" dossier; then
+            echo "Legacy exposed token found in public dossier."
+            exit 1
+          fi
