@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="theme-color" content="#050909" />
+  <meta name="description" content="EX™ SIGNAL RUN — production-ready browser chase game MVP" />
+  <meta name="color-scheme" content="dark" />
+  <title>EX™ SIGNAL RUN — CHASE • DRIVE • ESCAPE</title>
+  <link rel="manifest" href="manifest.webmanifest" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <div id="app">
+    <canvas id="game" aria-label="EX Signal Run"></canvas>
+
+    <section id="menu" class="screen active">
+      <div class="menu-art"></div>
+      <div class="scanlines"></div>
+      <div class="menu-shell">
+        <div class="eyebrow">フサム | experience™ — presents</div>
+        <div class="version">MVP / PRODUCTION RC1</div>
+        <h1><span>EX™</span> SIGNAL RUN</h1>
+        <p class="tag">CHASE • DRIVE • ESCAPE</p>
+        <p class="story">مدينة الإشارة انهارت. قد الـHUMMER، اخترق البوابات، أسقط الدرونز، وارفع الـCOMBO قبل أن يصل BLACK NODE إليك.</p>
+
+        <div class="player-strip">
+          <div><small>LEVEL</small><b id="menuLevel">01</b></div>
+          <div><small>BEST</small><b id="menuBest">000000</b></div>
+          <div><small>CREDITS</small><b id="menuCredits">0</b></div>
+        </div>
+
+        <div class="menu-actions">
+          <button id="startBtn" class="primary">ابدأ SIGNAL RUN</button>
+          <button id="dailyBtn" class="secondary">DAILY CONTRACT</button>
+          <button id="howBtn" class="ghost">طريقة اللعب</button>
+        </div>
+
+        <div id="menuSponsor" class="sponsor-card" hidden>
+          <span>MISSION PARTNER</span>
+          <b></b>
+          <small></small>
+          <button type="button">عرض الشريك</button>
+        </div>
+
+        <div class="micro">Mobile-first • لا إعلانات تقطع اللعب • الإعلانات داخل العالم + Rewarded اختياري</div>
+      </div>
+    </section>
+
+    <section id="how" class="screen modal-screen">
+      <div class="modal">
+        <div class="eyebrow">CONTROL BRIEF</div>
+        <h2>طريقة اللعب</h2>
+        <div class="how-grid">
+          <div><kbd>◀ / A</kbd><span>مسار يسار</span></div>
+          <div><kbd>▶ / D</kbd><span>مسار يمين</span></div>
+          <div><kbd>SPACE</kbd><span>قفزة / تفادي</span></div>
+          <div><kbd>SHIFT</kbd><span>BOOST</span></div>
+          <div><kbd>J / F</kbd><span>Pulse Shot</span></div>
+          <div><kbd>P</kbd><span>Pause</span></div>
+        </div>
+        <p>اجمع SIGNAL SHARDS، مرّ من الـCHECKPOINTS، اقترب من العوائق بدون اصطدام لرفع الـNEAR MISS، وحافظ على الـCOMBO لأعلى Score.</p>
+        <button id="closeHow" class="primary">مفهوم</button>
+      </div>
+    </section>
+
+    <section id="brief" class="screen cinematic">
+      <img id="briefImg" src="assets/hummer_ext.webp" alt="Hummer mission" />
+      <div class="cinematic-vignette"></div>
+      <div class="cinematic-copy">
+        <div class="chapter">SIGNAL CONTRACT</div>
+        <h2 id="briefTitle">CITY BREACH</h2>
+        <p id="briefText">اهرب لمسافة 5 KM وابقَ داخل الإشارة.</p>
+        <div id="briefSponsor" class="sponsor-inline" hidden><span>POWERED BY</span><b></b></div>
+        <button id="briefGo" class="primary">GO</button>
+      </div>
+    </section>
+
+    <section id="result" class="screen result-screen">
+      <div class="result-card">
+        <div class="eyebrow">MISSION REPORT</div>
+        <h2 id="resultTitle">RUN COMPLETE</h2>
+        <div class="score-ring"><span id="resultScore">000000</span><small>SCORE</small></div>
+        <div id="resultStats" class="stats"></div>
+
+        <div class="reward-box">
+          <div>
+            <span>OPTIONAL REWARDED</span>
+            <b>+250 SIGNAL CREDITS</b>
+            <small>شاهد إعلانًا اختياريًا بعد الجولة — بدون إجبار وبدون مقاطعة اللعب.</small>
+          </div>
+          <button id="rewardBtn" class="reward">شاهد واحصل على المكافأة</button>
+        </div>
+
+        <div id="resultSponsor" class="sponsor-card compact" hidden>
+          <span>RUN PARTNER</span><b></b><small></small><button type="button">اكتشف</button>
+        </div>
+
+        <div class="menu-actions">
+          <button id="restartBtn" class="primary">إعادة اللعب</button>
+          <button id="menuBtn" class="ghost">القائمة الرئيسية</button>
+        </div>
+      </div>
+    </section>
+
+    <div id="hud" class="hud hidden">
+      <div class="hud-left">
+        <div class="hud-meta"><b>EX-01</b><small id="stageLabel">SIGNAL CITY</small></div>
+        <div class="heat"><i id="heatBar"></i></div>
+      </div>
+      <div class="hud-center">
+        <span id="objective">DISTANCE 0 M</span>
+        <b id="comboText">COMBO x1.0</b>
+      </div>
+      <div class="hud-right">
+        <div class="bar"><i id="hpBar"></i></div><span id="hpText">100</span>
+        <div class="score" id="scoreText">000000</div>
+      </div>
+    </div>
+
+    <div id="boostHud" class="boost-hud hidden"><span>BOOST</span><i><b id="boostBar"></b></i></div>
+    <div id="toast"></div>
+
+    <div id="worldAd" class="world-ad hidden" aria-hidden="true">
+      <span>SPONSORED SIGNAL</span><b></b><small></small>
+    </div>
+
+    <div id="touch" class="touch hidden" aria-label="touch controls">
+      <div class="touch-left">
+        <button data-key="left">◀</button>
+        <button data-key="right">▶</button>
+      </div>
+      <div class="touch-right">
+        <button data-key="boost">BOOST</button>
+        <button data-key="jump">JUMP</button>
+        <button data-key="fire" class="fire">FIRE</button>
+      </div>
+    </div>
+
+    <button id="pauseBtn" class="pause hidden" aria-label="pause">Ⅱ</button>
+    <button id="muteBtn" class="mute" aria-label="mute">◉</button>
+  </div>
+
+  <script src="ads-engine.js"></script>
+  <script src="game.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      addEventListener('load', () => navigator.serviceWorker.register('./service-worker.js').catch(() => {}));
+    }
+  </script>
+</body>
+</html>

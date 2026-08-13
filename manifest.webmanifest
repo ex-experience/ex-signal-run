@@ -1,0 +1,10 @@
+{
+  "name": "EX™ SIGNAL RUN",
+  "short_name": "SIGNAL RUN",
+  "start_url": "./",
+  "display": "fullscreen",
+  "background_color": "#050909",
+  "theme_color": "#050909",
+  "description": "CHASE • DRIVE • ESCAPE — EX™ playable browser game",
+  "icons": []
+}

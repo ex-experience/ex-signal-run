@@ -1,0 +1,44 @@
+{
+  "version": 1,
+  "provider": "house",
+  "endpoint": "",
+  "campaigns": [
+    {
+      "id": "ex-playable-worlds",
+      "brand": "EX™ PLAYABLE WORLDS",
+      "headline": "ENGINEERING HUMAN EXPERIENCES",
+      "subline": "Native playable media by フサム | experience™",
+      "clickUrl": "",
+      "placements": [
+        "menu_partner",
+        "brief_partner",
+        "world_billboard",
+        "result_partner"
+      ],
+      "frequencyCapPerSession": 4,
+      "weight": 2,
+      "active": true
+    },
+    {
+      "id": "founding-partner-demo",
+      "brand": "FOUNDING PARTNER",
+      "headline": "YOUR BRAND INSIDE SIGNAL CITY",
+      "subline": "Billboards • Checkpoints • Missions • Rewarded",
+      "clickUrl": "",
+      "placements": [
+        "world_billboard",
+        "result_partner"
+      ],
+      "frequencyCapPerSession": 3,
+      "weight": 1,
+      "active": true
+    }
+  ],
+  "rewarded": {
+    "provider": "house",
+    "label": "SIGNAL BOOST",
+    "seconds": 5,
+    "rewardCredits": 250,
+    "googleAdUnitPath": ""
+  }
+}
